@@ -21,9 +21,17 @@ if ! file "$file_name" | grep -q "ELF"; then
 fi
 
 # Extraire les informations de l'en-tête ELF
-magic_number=$(hexdump -n 4 -e '4/1 "%02x " "\n"' "$file_name")
-class=$(readelf -h "$file_name" | grep "Class:" | awk '{print $2, $3}')
+
+# Magic Number (16 octets)
+magic_number=$(xxd -l 16 -p "$file_name" | tr -d '\n' | sed 's/\(..\)/\1 /g')
+
+# Class (32-bit ou 64-bit)
+class=$(readelf -h "$file_name" | grep "Class:" | awk '{print $2}')
+
+# Byte Order (Endianness)
 byte_order=$(readelf -h "$file_name" | grep "Data:" | awk '{print $2, $3}')
+
+# Entry Point Address
 entry_point_address=$(readelf -h "$file_name" | grep "Entry point address:" | awk '{print $4}')
 
 # Inclure le fichier messages.sh
@@ -31,4 +39,3 @@ source messages.sh
 
 # Afficher les informations formatées
 display_elf_header_info
-
