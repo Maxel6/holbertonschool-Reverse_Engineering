@@ -1,33 +1,38 @@
 #!/bin/bash
 
-# Vérifier si un argument est fourni
+source ./messages.sh
+
+# one command line arg
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 <ELF file>"
-    exit 1
+	echo "Usage: $0 <elf_file>"       
+	exit 1
 fi
 
-file_name="$1"
-
-# Vérifier si le fichier existe
-if [ ! -f "$file_name" ]; then
-    echo "Error: File '$file_name' not found!"
-    exit 1
+# arg is a file
+if [ ! -f "$1" ]; then
+	echo "error not a file"
+	exit 1
 fi
 
-# Vérifier si le fichier est un ELF
-if ! file "$file_name" | grep -q "ELF"; then
-    echo "Error: '$file_name' is not an ELF file!"
-    exit 1
+# is type: elf file
+if ! file "$1" | grep -q "ELF"; then
+	echo "not an elf file"
+	exit 1
 fi
 
-# Extraire les informations avec readelf en supprimant les espaces
-magic_number=$(hexdump -n 16 -e '16/1 "%02x "' "$file_name" | sed 's/ $//')
-class=$(readelf -h "$file_name" | grep "Class:" | awk '{print $2}' | tr -d ' ')
-byte_order=$(readelf -h "$file_name" | grep "Data:" | awk '{print $(NF-1), $NF}' | sed 's/,//g' | tr -s ' ')
-entry_point_address=$(readelf -h "$file_name" | grep "Entry point address:" | awk '{print $4}')
+elf_magic=$(readelf -h "$1" | grep "Magic:" | awk '{$1=""; print $0}')
+elf_class=$(readelf -h "$1" | grep "Class:" | awk '{$1=""; print $0}')
+elf_byte_order=$(readelf -h "$1" | grep "Data:" | awk '{$1=""; print $0}')
+elf_entry_point=$(readelf -h "$1" | grep "Entry point address:" | awk '{$1=""; $2=""; $3=""; print $0}')
 
-# Inclure messages.sh pour formater l'affichage
-source messages.sh
+arg1=$(echo "${elf_magic:1}")
+arg2=$(echo "${elf_class:1}")
+arg3=$(echo "${elf_byte_order:17}")
+arg4=$(echo "${elf_entry_point:3}")
 
-# Appeler la fonction pour afficher les résultats
-display_elf_header_infos
+export file_name="$1"
+export magic_number="$arg1"
+export class="$arg2"
+export byte_order="$arg3"
+export entry_point_address="$arg4"
+display_elf_header_info
