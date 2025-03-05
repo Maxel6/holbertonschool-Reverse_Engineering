@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Vérifier si un fichier est passé en argument
+# Vérifier si un argument est fourni
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <ELF file>"
     exit 1
@@ -20,22 +20,14 @@ if ! file "$file_name" | grep -q "ELF"; then
     exit 1
 fi
 
-# Extraire les informations de l'en-tête ELF
-
-# Magic Number (16 octets)
-magic_number=$(xxd -l 16 -p "$file_name" | tr -d '\n' | sed 's/\(..\)/\1 /g')
-
-# Class (32-bit ou 64-bit)
-class=$(readelf -h "$file_name" | grep "Class:" | awk '{print $2}')
-
-# Byte Order (Endianness)
-byte_order=$(readelf -h "$file_name" | grep "Data:" | awk '{print $2, $3}')
-
-# Entry Point Address
+# Extraire les informations avec readelf en supprimant les espaces
+magic_number=$(hexdump -n 16 -e '16/1 "%02x "' "$file_name" | sed 's/ $//')
+class=$(readelf -h "$file_name" | grep "Class:" | awk '{print $2}' | tr -d ' ')
+byte_order=$(readelf -h "$file_name" | grep "Data:" | awk '{print $(NF-1), $NF}' | sed 's/,//g' | tr -s ' ')
 entry_point_address=$(readelf -h "$file_name" | grep "Entry point address:" | awk '{print $4}')
 
-# Inclure le fichier messages.sh
+# Inclure messages.sh pour formater l'affichage
 source messages.sh
 
-# Afficher les informations formatées
-display_elf_header_info
+# Appeler la fonction pour afficher les résultats
+display_elf_header_infos
